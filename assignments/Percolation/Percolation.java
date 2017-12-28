@@ -1,20 +1,15 @@
-import java.lang.*;
-import java.io.*;
-import edu.princeton.cs.algs4.*;
+import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
 public class Percolation {
-  private int size;
-  //false is closed, true is open
-  private boolean grid[][];
-  private WeightedQuickUnionUF UF;
-  private WeightedQuickUnionUF UF2;
-  private int top;
-  private int bottom;
+  private final int size;
+  private boolean[][] grid;  // false is closed, true is open
+  // UF2 has only virtual top while UF 2 has both top
+  // and bottom. This is done to solve the backlash problem
+  private final WeightedQuickUnionUF UF;
+  private final WeightedQuickUnionUF UF2;
+  private final int top;
+  private final int bottom;
   private int numOpen;
-
-  private inRange(int row, int col) {
-    return (row<=size && col<=size && row>=1 && col>=1);
-  }
 
   // create n-by-n grid, with all sites blocked
   public Percolation(int n) {
@@ -23,6 +18,7 @@ public class Percolation {
     }
     size = n;
     numOpen = 0;
+    // 0th position is unused in grid arrays, UF, UF2
     grid = new boolean[n+1][n+1];
     UF = new WeightedQuickUnionUF(n*n + 3);
     UF2 = new WeightedQuickUnionUF(n*n + 2);
@@ -33,18 +29,21 @@ public class Percolation {
   // open site (row, col) if it is not open already
   public void open(int row, int col) {
     if(!inRange(row, col)) {
-      throw IllegalArgumentException();
+      throw new IllegalArgumentException();
     }
     if(!isOpen(row, col)) {
       numOpen++;
       grid[row][col] = true;
       if(row==1) {
+        // Opening a site on top connects it to the virtual top
         UF.union(((row-1)*size + col), top);
         UF2.union(((row-1)*size + col), top);
       }
       if(row==size) {
+        // Opening a site on bottom connects it to the virtual bottom
         UF.union(((row-1)*size + col), bottom);
       }
+      // Connect the site being opened to all its open neighbours
       if(row-1>=1 && grid[row-1][col]) {
         UF.union(((row-1)*size + col), (((row-1)-1)*size + col));
         UF2.union(((row-1)*size + col), (((row-1)-1)*size + col));
@@ -67,7 +66,7 @@ public class Percolation {
   // is site (row, col) open?
   public boolean isOpen(int row, int col) {
     if(!inRange(row, col)) {
-      throw IllegalArgumentException();
+      throw new IllegalArgumentException();
     }
     return grid[row][col];
   }
@@ -75,8 +74,9 @@ public class Percolation {
   // is site (row, col) full?
   public boolean isFull(int row, int col) {
     if(!inRange(row, col)) {
-      throw IllegalArgumentException();
+      throw new IllegalArgumentException();
     }
+    // A site i full if it is connected to the top
     return UF2.connected(((row-1)*size + col), top);
   }
 
@@ -87,21 +87,11 @@ public class Percolation {
 
   // does the system percolate?
   public boolean percolates() {
+    // The system percolates if top and bottom are connected
     return UF.connected(top, bottom);
   }
 
-  // test client (optional)
-  public static void main(String[] args) throws IOException {
-    // BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    // Percolation myClass = new Percolation(5);
-    // myClass.open(1,2);
-    // myClass.open(2,2);
-    // myClass.open(3,2);
-    // myClass.open(4,2);
-    // myClass.open(5,2);
-    // myClass.open(5,5);
-    // System.out.println(myClass.numberOfOpenSites());
-    // System.out.println(myClass.percolates());
-    // System.out.println("myClass.isFull(5,5): "+ myClass.isFull(5, 5));
+  private boolean inRange(int row, int col) {
+    return (row<=size && col<=size && row>=1 && col>=1);
   }
 }
